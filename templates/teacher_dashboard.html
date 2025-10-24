@@ -1,0 +1,124 @@
+{% extends "base.html" %} {% block title %}Главная - Преподаватель{% endblock %} {% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-house-fill"></i> Добро пожаловать, {{ session.username }}!</h1>
+
+</div>
+
+<div class="row g-4 ">
+    <!-- Расписание -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-calendar3 display-4 text-primary mb-3 "></i>
+                <h5 class="card-title ">Расписание</h5>
+                <p class="card-text ">Посмотри расписание занятий на неделю</p>
+                <a href="/schedule " class="btn btn-primary ">
+                    <i class="bi bi-arrow-right "></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Материалы -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-book-fill display-4 text-success mb-3 "></i>
+                <h5 class="card-title ">Учебные материалы</h5>
+                <p class="card-text ">Лекции, семинары и другие материалы</p>
+                <a href="/teacher/materials " class="btn btn-success ">
+                    <i class="bi bi-arrow-right "></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ИПР -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-graph-up-arrow display-4 text-warning mb-3 "></i>
+                <h5 class="card-title ">Индивидуальный план развития</h5>
+                <p class="card-text ">Планируй свой профессиональный рост</p>
+
+                <button class="btn btn-warning" disabled>
+                    <i class="bi bi-arrow-right "></i> Скоро
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Обратная связь -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-chat-left-text-fill display-4 text-info mb-3 "></i>
+                <h5 class="card-title ">Обратная связь</h5>
+                <p class="card-text ">Оцени качество обучения и преподавателей</p>
+                <button class="btn btn-info  " disabled>
+                    <i class="bi bi-arrow-right "></i> Скоро
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Профиль -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-person-circle display-4 text-secondary mb-3 "></i>
+                <h5 class="card-title ">Профиль</h5>
+                <p class="card-text ">Твои личные данные и настройки</p>
+                <a href="/teacher/profile " class="btn btn-secondary ">
+                    <i class="bi bi-arrow-right "></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div class="col-md-6 col-lg-4 ">
+        <div class="card h-100 ">
+            <div class="card-body text-center ">
+                <i class="bi bi-bell-fill display-4 text-danger mb-3 "></i>
+                <h5 class="card-title ">Уведомления</h5>
+                <p class="card-text ">Важные новости и напоминания</p>
+                <button class="btn btn-danger " disabled>
+                    <i class="bi bi-arrow-right "></i> Скоро
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mt-5 ">
+    <div class="col-12 ">
+        <div class="card ">
+            <div class="card-body ">
+                <h5 class="card-title mb-4 ">
+                    <i class="bi bi-graph-up "></i> Быстрая статистика
+                </h5>
+                <div class="row text-center ">
+                    <div class="col-md-3 ">
+                        <h2 class="text-primary ">18</h2>
+                        <p class="text-muted ">Недель в семестре</p>
+                    </div>
+                    <div class="col-md-3 ">
+                        <h2 class="text-success ">3</h2>
+                        <p class="text-muted ">Учебных материала</p>
+                    </div>
+                    <div class="col-md-3 ">
+                        <h2 class="text-warning ">3</h2>
+                        <p class="text-muted ">Цели в ИПР</p>
+                    </div>
+                    <div class="col-md-3 ">
+                        <h2 class="text-info ">4.67</h2>
+                        <p class="text-muted ">Средний балл</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

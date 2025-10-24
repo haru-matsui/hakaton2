@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Личный кабинет</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .role-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .role-option:hover {
+            border-color: #667eea;
+        }
+        
+        .role-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .role-option input[type="radio"] {
+            display: none;
+        }
+        
+        .conditional-field {
+            display: none;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error {
+            background: #ffe0e0;
+            color: #c00;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <h1>📝 Регистрация</h1>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="form-group">
+                <label>Я являюсь:</label>
+                <div class="role-selector">
+                    <label class="role-option" id="student-label">
+                        <input type="radio" name="role" value="student" id="role-student" required>
+                        <div>👨‍🎓 Студент</div>
+                    </label>
+                    <label class="role-option" id="teacher-label">
+                        <input type="radio" name="role" value="teacher" id="role-teacher">
+                        <div>👨‍🏫 Преподаватель</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">ФИО</label>
+                <input type="text" id="full_name" name="full_name" placeholder="Иванов Иван Иванович" required>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Логин</label>
+                <input type="text" id="username" name="username" placeholder="ivan123" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required minlength="4">
+            </div>
+
+            <!-- Поле для студентов -->
+            <div class="form-group conditional-field" id="group-field">
+                <label for="group_name">Группа</label>
+                <select id="group_name" name="group_name">
+                    <option value="">Выберите группу</option>
+                    {% for group in groups %}
+                    <option value="{{ group }}">{{ group }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Поле для преподавателей -->
+            <div class="form-group conditional-field" id="subject-field">
+                <label for="subject">Предмет</label>
+                <input type="text" id="subject" name="subject" placeholder="Математика">
+            </div>
+
+            <button type="submit">✅ Зарегистрироваться</button>
+        </form>
+
+        <div class="login-link">
+            Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+        </div>
+    </div>
+
+    <script>
+        // Переключение между студентом и преподавателем
+        const studentRadio = document.getElementById('role-student');
+        const teacherRadio = document.getElementById('role-teacher');
+        const studentLabel = document.getElementById('student-label');
+        const teacherLabel = document.getElementById('teacher-label');
+        const groupField = document.getElementById('group-field');
+        const subjectField = document.getElementById('subject-field');
+        const groupSelect = document.getElementById('group_name');
+        const subjectInput = document.getElementById('subject');
+
+        function updateRole() {
+            if (studentRadio.checked) {
+                studentLabel.classList.add('selected');
+                teacherLabel.classList.remove('selected');
+                groupField.classList.add('show');
+                subjectField.classList.remove('show');
+                groupSelect.required = true;
+                subjectInput.required = false;
+            } else if (teacherRadio.checked) {
+                teacherLabel.classList.add('selected');
+                studentLabel.classList.remove('selected');
+                subjectField.classList.add('show');
+                groupField.classList.remove('show');
+                subjectInput.required = true;
+                groupSelect.required = false;
+            }
+        }
+
+        studentRadio.addEventListener('change', updateRole);
+        teacherRadio.addEventListener('change', updateRole);
+
+        // Инициализация при загрузке
+        if (studentRadio.checked) {
+            updateRole();
+        }
+    </script>
+</body>
+
+</html>
