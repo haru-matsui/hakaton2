@@ -1,0 +1,34 @@
+{
+  "students": [
+    {
+      "student_id": 1,
+      "student_name": "Иванов Иван Иванович",
+      "goals": [
+        {
+          "id": 1,
+          "title": "Изучить Python на продвинутом уровне",
+          "description": "Освоить асинхронное программирование, работу с базами данных",
+          "deadline": "2025-12-31",
+          "status": "in_progress",
+          "progress": 45
+        },
+        {
+          "id": 2,
+          "title": "Пройти курс по Machine Learning",
+          "description": "Coursera: Machine Learning Specialization",
+          "deadline": "2026-03-31",
+          "status": "planned",
+          "progress": 0
+        },
+        {
+          "id": 3,
+          "title": "Участвовать в хакатонах",
+          "description": "Минимум 3 хакатона за семестр",
+          "deadline": "2026-01-31",
+          "status": "in_progress",
+          "progress": 33
+        }
+      ]
+    }
+  ]
+}

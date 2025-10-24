@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .login-card {
+        max-width: 450px;
+        width: 100%;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    .login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .login-header h2 {
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+    
+    .login-header .icon {
+        font-size: 4rem;
+        color: var(--primary-color);
+        margin-bottom: 20px;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(78, 73, 231, 0.25);
+    }
+    
+    .btn-login {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1rem;
+        margin-top: 20px;
+    }
+    
+    .demo-accounts {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e0e0e0;
+    }
+    
+    .demo-account {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-mortarboard-fill icon"></i>
+            <h2>Личный кабинет</h2>
+            <p class="text-muted">Уфимский университет науки и технологий</p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST">
+            <div class="mb-3">
+                <label for="login" class="form-label">
+                    <i class="bi bi-person-fill"></i> Логин
+                </label>
+                <input type="text" class="form-control" id="login" name="login" required autofocus>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">
+                    <i class="bi bi-lock-fill"></i> Пароль
+                </label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-login">
+                <i class="bi bi-box-arrow-in-right"></i> Войти
+            </button>
+        </form>
+        
+        <div class="demo-accounts">
+            <p class="text-center mb-2"><strong>Демо-аккаунты для теста:</strong></p>
+            <div class="demo-account">
+                <strong>Студент:</strong> student1 / password
+            </div>
+            <div class="demo-account">
+                <strong>Преподаватель:</strong> teacher1 / password
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

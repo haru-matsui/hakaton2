@@ -1,0 +1,52 @@
+{
+    "students": [{
+            "id": 1,
+            "login": "student1",
+            "password": "password",
+            "name": "Зарипов Дамир Ришатович",
+            "group": "ТОП-103Б",
+            "email": "ivanov@uust.ru"
+        },
+        {
+            "id": 2,
+            "login": "student2",
+            "password": "password",
+            "name": "Петрова Анна Сергеевна",
+            "group": "ТОП-104Б",
+            "email": "petrova@uust.ru"
+        },
+        {
+            "id": 3,
+            "login": "student3",
+            "password": "password",
+            "name": "Сидоров Петр Алексеевич",
+            "group": "ТОП-102Б",
+            "email": "sidorov@uust.ru"
+        },
+        {
+            "id": 4,
+            "login": "student4",
+            "password": "password",
+            "name": "Кузнецова Мария Дмитриевна",
+            "group": "ТОП-101Б",
+            "email": "kuznetsova@uust.ru"
+        }
+    ],
+    "teachers": [{
+            "id": 101,
+            "login": "teacher1",
+            "password": "password",
+            "name": "Кужаев Арсен Фанилевич",
+            "subject": "Математический анализ",
+            "email": "kuzhaev@uust.ru"
+        },
+        {
+            "id": 102,
+            "login": "teacher2",
+            "password": "password",
+            "name": "Костюкова Анастасия Петровна",
+            "subject": "Программно-аппаратные комплексы",
+            "email": "kostyukova@uust.ru"
+        }
+    ]
+}

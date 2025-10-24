@@ -1,0 +1,405 @@
+{% extends "base.html" %} {% block title %}Расписание{% endblock %} {% block extra_css %}
+<style>
+    .group-selector {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+    
+    .group-selector h5 {
+        margin-bottom: 15px;
+        color: var(--primary-color);
+    }
+    
+    .group-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .group-btn {
+        padding: 10px 20px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .group-btn:hover {
+        border-color: var(--primary-color);
+        background: #f8f9fa;
+    }
+    
+    .group-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .week-selector {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .week-selector button {
+        background: white;
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        border-radius: 10px;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .week-selector button:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .week-selector h4 {
+        margin: 0;
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+    
+    .tabs-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    
+    .tab-btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 15px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+    }
+    
+    .tab-btn:hover {
+        border-color: var(--primary-color);
+    }
+    
+    .tab-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .day-content {
+        display: none;
+    }
+    
+    .day-content.active {
+        display: block;
+    }
+    
+    .dayname {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 20px;
+    }
+    
+    .lesson {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+    }
+    
+    .lesson:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .lesson.type0 {
+        border-left: 5px solid #4e49e7;
+    }
+    
+    .lesson.type1 {
+        border-left: 5px solid #28a745;
+    }
+    
+    .lesson.type15 {
+        border-left: 5px solid #ffc107;
+    }
+    
+    .lesson.nothing {
+        border-left: 5px solid #6c757d;
+        background: #f8f9fa;
+    }
+    
+    .lesson .time {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    .lesson h2 {
+        font-size: 1rem;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+    
+    .lesson__name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .bottom-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .bottom-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 50px;
+    }
+    
+    .no-schedule {
+        text-align: center;
+        padding: 50px;
+        background: white;
+        border-radius: 15px;
+    }
+</style>
+{% endblock %} {% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-calendar3"></i> Расписание занятий</h1>
+    <p class="text-muted">Твоя группа: <strong>{{ session.group }}</strong></p>
+</div>
+
+<!-- Выбор группы -->
+<div class="group-selector">
+    <h5><i class="bi bi-people-fill"></i> Выбери группу:</h5>
+    <div class="group-buttons" id="groupButtons">
+        {% for group in groups %}
+        <button class="group-btn {% if group == current_group %}active{% endif %}" onclick="selectGroup('{{ group }}')">
+            {{ group }}
+        </button> {% endfor %}
+    </div>
+</div>
+
+<!-- Выбор недели -->
+<div class="week-selector">
+    <button onclick="changeWeek(-1)">
+        <i class="bi bi-chevron-double-left"></i> Предыдущая
+    </button>
+    <h4>Неделя <span id="currentWeek">8</span></h4>
+    <button onclick="changeWeek(1)">
+        Следующая <i class="bi bi-chevron-double-right"></i>
+    </button>
+    <button onclick="goToCurrentWeek()">
+        <i class="bi bi-calendar-check"></i> Текущая
+    </button>
+</div>
+
+<!-- Табы дней недели -->
+<div class="tabs-bar" id="tabsBar">
+    <button class="tab-btn active" onclick="switchDay(0)">
+        ПН<br><small id="date-0">-</small>
+    </button>
+    <button class="tab-btn" onclick="switchDay(1)">
+        ВТ<br><small id="date-1">-</small>
+    </button>
+    <button class="tab-btn" onclick="switchDay(2)">
+        СР<br><small id="date-2">-</small>
+    </button>
+    <button class="tab-btn" onclick="switchDay(3)">
+        ЧТ<br><small id="date-3">-</small>
+    </button>
+    <button class="tab-btn" onclick="switchDay(4)">
+        ПТ<br><small id="date-4">-</small>
+    </button>
+    <button class="tab-btn" onclick="switchDay(5)">
+        СБ<br><small id="date-5">-</small>
+    </button>
+</div>
+
+<!-- Содержимое дней -->
+<div id="scheduleContent">
+    <div class="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-3">Загрузка расписания...</p>
+    </div>
+</div>
+
+<script>
+    let currentWeek = 8;
+    let currentGroup = '{{ current_group }}';
+    let scheduleData = {};
+    let currentDayIndex = 0;
+
+    // Загружаем расписание при загрузке страницы
+    async function loadSchedule(groupName) {
+        try {
+            const response = await fetch(`/api/schedule/${groupName}`);
+            scheduleData = await response.json();
+            loadWeekSchedule();
+        } catch (error) {
+            console.error('Ошибка загрузки расписания:', error);
+            document.getElementById('scheduleContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Ошибка загрузки расписания
+                </div>
+            `;
+        }
+    }
+
+    function selectGroup(groupName) {
+        currentGroup = groupName;
+
+        // Обновляем активную кнопку группы
+        document.querySelectorAll('.group-btn').forEach(btn => {
+            if (btn.textContent.trim() === groupName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Загружаем расписание новой группы
+        loadSchedule(groupName);
+    }
+
+    function switchDay(dayIndex) {
+        currentDayIndex = dayIndex;
+
+        // Переключаем активную кнопку
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach((tab, idx) => {
+            if (idx === dayIndex) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // Показываем нужный день
+        const days = document.querySelectorAll('.day-content');
+        days.forEach((day, idx) => {
+            if (idx === dayIndex) {
+                day.classList.add('active');
+            } else {
+                day.classList.remove('active');
+            }
+        });
+    }
+
+    function changeWeek(delta) {
+        currentWeek += delta;
+        if (currentWeek < 1) currentWeek = 1;
+        if (currentWeek > 18) currentWeek = 18;
+
+        document.getElementById('currentWeek').textContent = currentWeek;
+        loadWeekSchedule();
+    }
+
+    function goToCurrentWeek() {
+        currentWeek = 8; // Текущая неделя
+        document.getElementById('currentWeek').textContent = currentWeek;
+        loadWeekSchedule();
+    }
+
+    function loadWeekSchedule() {
+        const weekData = scheduleData['недели'] ? scheduleData['недели'][currentWeek] : null;
+
+        if (!weekData) {
+            document.getElementById('scheduleContent').innerHTML = `
+                <div class="no-schedule">
+                    <i class="bi bi-calendar-x display-1 text-muted"></i>
+                    <h3 class="mt-3">Расписание не найдено</h3>
+                    <p class="text-muted">Для недели ${currentWeek} расписание отсутствует</p>
+                </div>
+            `;
+            return;
+        }
+
+        const daysOrder = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+        let html = '';
+
+        daysOrder.forEach((dayName, index) => {
+            const dayData = weekData[dayName];
+            const isActive = index === 0 ? 'active' : '';
+
+            // Обновляем даты в табах
+            if (dayData && dayData['дата']) {
+                document.getElementById(`date-${index}`).textContent = dayData['дата'];
+            } else {
+                document.getElementById(`date-${index}`).textContent = '-';
+            }
+
+            html += `<div class="day-content ${isActive}">`;
+            html += `<p class="dayname">${dayName} ${dayData ? '(' + dayData['дата'] + ')' : ''}</p>`;
+
+            if (dayData && dayData['пары'] && dayData['пары'].length > 0) {
+                dayData['пары'].forEach(lesson => {
+                    const lessonType = lesson['тип'] === 'Лекция' ? 'type0' :
+                        lesson['тип'].includes('Практика') || lesson['тип'].includes('семинар') ? 'type1' : 'type15';
+
+                    html += `
+                        <div class="lesson ${lessonType}">
+                            <p class="time">
+                                <b>${lesson['время']}</b> (${lesson['номер_пары']} пара)
+                            </p>
+                            <h2>${lesson['номер_пары']}. ${lesson['тип']}</h2>
+                            <p class="lesson__name">${lesson['предмет']}</p>
+                            <div class="bottom-info">
+                                <p><i class="bi bi-geo-alt-fill"></i> ${lesson['аудитория'] || 'Аудитория не указана'}</p>
+                                <p><i class="bi bi-person-fill"></i> ${lesson['преподаватель'] || ''}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `
+                    <div class="lesson nothing">
+                        <p class="time"><b>08:00-09:20</b> (1 пара)</p>
+                        <h2>Занятий нет</h2>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+        });
+
+        document.getElementById('scheduleContent').innerHTML = html;
+        switchDay(0);
+    }
+
+    // Загружаем расписание при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSchedule(currentGroup);
+    });
+</script>
+{% endblock %}
