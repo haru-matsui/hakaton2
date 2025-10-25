@@ -270,6 +270,13 @@ def schedule():
     # Получаем все группы
     groups_list = get_all_groups()
     
+    # 🔍 ОТЛАДКА
+    print(f"\n{'='*60}")
+    print(f"🔍 ОТЛАДКА РАСПИСАНИЯ:")
+    print(f"   Роль пользователя: {session.get('role')}")
+    print(f"   Группа студента: {session.get('group')}")
+    print(f"   Все группы в БД: {groups_list}")
+    
     # Определяем какую группу показать
     if session.get('role') == 'student':
         # Для студента - его группа по умолчанию
@@ -278,16 +285,22 @@ def schedule():
         # Для преподавателя - первая группа или выбранная
         current_group = request.args.get('group', groups_list[0] if groups_list else None)
     
+    print(f"   Выбранная группа: {current_group}")
+    
     # Получаем расписание
     schedule_data = {}
     if current_group:
         schedule_data = get_schedule_from_db(current_group)
+        print(f"   Недель в расписании: {len(schedule_data.get('недели', {}))}")
+    else:
+        print(f"   ⚠️  Группа не выбрана!")
+    
+    print(f"{'='*60}\n")
     
     return render_template('schedule.html',
                          schedule=schedule_data,
                          groups=groups_list,
                          current_group=current_group)
-
 
 # Редиректы для обратной совместимости
 @app.route('/student/schedule')
@@ -502,9 +515,40 @@ def teacher_profile():
     return render_template('profile.html', user=user)
 
 
-# ==================== ЗАМЕТКИ ====================
 
-@app.route('/notes/save', methods=['POST'])
+
+
+# ==================== API ДЛЯ РАСПИСАНИЯ ====================
+
+@app.route('/api/schedule/<group_name>')
+def api_schedule(group_name):
+    """API расписания для группы"""
+    schedule_data = get_schedule_from_db(group_name)
+    return jsonify(schedule_data)
+
+
+@app.route('/api/schedule/<group_name>/week/<int:week_number>')
+def api_week(group_name, week_number):
+    """API конкретной недели"""
+    schedule_data = get_schedule_from_db(group_name)
+    week_data = schedule_data.get('недели', {}).get(str(week_number), {})
+    return jsonify({
+        'группа': group_name,
+        'неделя': week_number,
+        'расписание': week_data
+    })
+
+
+@app.route('/api/groups')
+def api_groups():
+    """API списка всех групп"""
+    groups = get_all_groups()
+    return jsonify(groups)
+
+
+# ==================== API ДЛЯ ЗАМЕТОК ====================
+
+@app.route('/api/notes/save', methods=['POST'])
 @login_required_custom
 def save_note():
     """Сохранить заметку"""
@@ -547,7 +591,7 @@ def save_note():
     return jsonify({'success': True, 'note': note_text})
 
 
-@app.route('/notes/delete', methods=['POST'])
+@app.route('/api/notes/delete', methods=['POST'])
 @login_required_custom
 def delete_note():
     """Удалить заметку"""
@@ -576,10 +620,10 @@ def delete_note():
     return jsonify({'success': True})
 
 
-@app.route('/notes/all', methods=['POST'])
+@app.route('/api/notes/all', methods=['POST'])
 @login_required_custom
 def get_all_notes():
-    """Получить все заметки"""
+    """Получить все заметки пользователя"""
     data = request.get_json()
     
     user_id = session.get('user_id')
@@ -668,8 +712,6 @@ if __name__ == '__main__':
     print("🎓 ЛИЧНЫЙ КАБИНЕТ СТУДЕНТА - ХАКАТОН 2025")
     print("="*70)
     print(f"🌐 Сайт:         http://127.0.0.1:5000/")
-    print(f"🔑 Студент:      student1 / password")
-    print(f"🔑 Преподаватель: teacher1 / password")
     print(f"📊 Загружено групп из БД: {len(groups)}")
     if groups:
         print(f"📋 Группы: {', '.join(groups)}")
