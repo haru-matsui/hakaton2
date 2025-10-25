@@ -474,42 +474,53 @@ def get_all_notes():
 from flask import send_file, abort
 import os
 
+import unicodedata
+
 @app.route('/download/material/<int:material_id>')
 @login_required_custom
 def download_material(material_id):
     """Скачивание файла материала"""
     db_sess = db_session.create_session()
     
-    material = db_sess.query(Material).get(material_id)
-    
-    if not material:
+    try:
+        material = db_sess.query(Material).filter(Material.id == material_id).first()
+        
+        if not material:
+            abort(404)
+        
+        # Для студента проверяем группу
+        if session.get('role') == 'student':
+            if material.group_name != session.get('group'):
+                abort(403)
+        
+        # Извлекаем имя файла из пути
+        target_filename = os.path.basename(material.file_path)
+        materials_dir = os.path.join('static', 'materials')
+        
+        print(f"🔍 Ищем файл: {target_filename}")
+        
+        # Нормализуем имя файла из БД
+        target_normalized = unicodedata.normalize('NFC', target_filename)
+        
+        # Ищем файл в папке с нормализацией
+        for filename in os.listdir(materials_dir):
+            filename_normalized = unicodedata.normalize('NFC', filename)
+            
+            if filename_normalized == target_normalized:
+                print(f"✅ Файл найден: {filename}")
+                full_path = os.path.join(materials_dir, filename)
+                
+                return send_file(
+                    full_path,
+                    as_attachment=True,
+                    download_name=filename
+                )
+        
+        print(f"❌ Файл не найден в папке")
+        abort(404)
+        
+    finally:
         db_sess.close()
-        abort(404)
-    
-    # Для студента - проверяем что материал его группы
-    if session.get('role') == 'student':
-        if material.group_name != session.get('group'):
-            db_sess.close()
-            abort(403)  # Доступ запрещён
-    
-    db_sess.close()
-    
-    # Формируем полный путь к файлу
-    # Убираем /static/ из пути, если он есть
-    file_path = material.file_path.replace('/static/', '')
-    full_path = os.path.join('static', file_path) if not material.file_path.startswith('static') else material.file_path
-    
-    # Проверяем существование файла
-    if not os.path.exists(full_path):
-        abort(404)
-    
-    # Отправляем файл
-    return send_file(
-        full_path,
-        as_attachment=True,
-        download_name=os.path.basename(full_path)
-    )
-
 # ==================== ОБРАБОТЧИКИ ОШИБОК ====================
 
 @app.errorhandler(404)

@@ -21,7 +21,7 @@ def add_materials():
             {
                 'group_name': 'ТОП-103Б',
                 'subject': 'Матан',
-                'file_path': 'materials/Математический_анализ_ТОП_ИТ_Лекция_7.pdf',  # ← Исправил путь
+                'file_path': 'static/materials/Математический_анализ_ТОП_ИТ_Лекция_7.pdf',
                 'description': 'описание..',
                 'file_type': 'Лекция',
                 'teacher_name': 'Кужаев А.Ф.'
@@ -29,7 +29,7 @@ def add_materials():
             {
                 'group_name': 'ТОП-103Б',
                 'subject': 'Матан',
-                'file_path': 'materials/Математический_анализ_ТОП_ИТ_Лекция_8.pdf',
+                'file_path': 'static/materials/Математический_анализ_ТОП_ИТ_Лекция_8.pdf',
                 'description': 'описание..',
                 'file_type': 'Лекция',
                 'teacher_name': 'Кужаев А.Ф.'
@@ -37,7 +37,7 @@ def add_materials():
             {
                 'group_name': 'ТОП-103Б',
                 'subject': 'Матан',
-                'file_path': 'materials/Математический_анализ_ТОП_ИТ_Лекция_9.pdf',
+                'file_path': 'static/materials/Математический_анализ_ТОП_ИТ_Лекция_9.pdf',
                 'description': 'описание..',
                 'file_type': 'Лекция',
                 'teacher_name': 'Кужаев А.Ф.'
@@ -45,7 +45,7 @@ def add_materials():
             {
                 'group_name': 'ТОП-104Б',
                 'subject': 'Матан',
-                'file_path': 'materials/Математический_анализ_ТОП_ИТ_Лекция_11.pdf',
+                'file_path': 'static/materials/Математический_анализ_ТОП_ИТ_Лекция_11.pdf',
                 'description': 'описание..',
                 'file_type': 'Лекция',
                 'teacher_name': 'Кужаев А.Ф.'
