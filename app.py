@@ -3,6 +3,7 @@ from collections import OrderedDict
 import os
 from datetime import datetime
 from functools import wraps
+import unicodedata
 
 # Импорты для работы с БД
 from data import db_session
@@ -11,8 +12,21 @@ from data.schedule import Schedule
 from data.notes import Note
 from data.materials import Material
 
+# Для загрузки файлов
+from flask import send_file, abort
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 app.secret_key = 'hackathon_secret_key_2025'
+
+# Настройки загрузки файлов
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'doc', 'ppt'}
+UPLOAD_FOLDER = 'static/materials'
+
+
+def allowed_file(filename):
+    """Проверка расширения файла"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def get_schedule_from_db(group_name):
@@ -85,7 +99,7 @@ def login_required_custom(f):
     return decorated_function
 
 
-# ==================== МАРШРУТЫ ====================
+# ==================== ОСНОВНЫЕ СТРАНИЦЫ ====================
 
 @app.route('/')
 def index():
@@ -179,6 +193,7 @@ def register():
     
     return render_template('register.html', groups=get_all_groups())
 
+
 @app.route('/profile')
 @login_required_custom
 def profile():
@@ -187,6 +202,7 @@ def profile():
         return redirect(url_for('student_profile'))
     else:
         return redirect(url_for('teacher_profile'))
+
 
 @app.route('/logout')
 def logout():
@@ -205,6 +221,48 @@ def student_dashboard():
         return redirect(url_for('teacher_dashboard'))
     
     return render_template('student_dashboard.html')
+
+
+@app.route('/student/materials')
+@login_required_custom
+def student_materials():
+    """Страница материалов для студента"""
+    if session.get('role') != 'student':
+        return redirect(url_for('index'))
+    
+    current_group = session.get('group')
+    db_sess = db_session.create_session()
+    
+    # Получаем материалы для группы студента
+    materials = db_sess.query(Material).filter(
+        Material.group_name == current_group
+    ).order_by(Material.upload_date.desc()).all()
+    
+    # Получаем список уникальных предметов для фильтра
+    subjects = db_sess.query(Material.subject).filter(
+        Material.group_name == current_group
+    ).distinct().all()
+    subjects = [s[0] for s in subjects]
+    
+    db_sess.close()
+    
+    return render_template('materials.html', 
+                         materials=materials,
+                         subjects=subjects)
+
+
+@app.route('/student/profile')
+@login_required_custom
+def student_profile():
+    """Профиль студента"""
+    if session.get('role') != 'student':
+        return redirect(url_for('teacher_profile'))
+    
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(session['user_id'])
+    db_sess.close()
+    
+    return render_template('profile.html', user=user)
 
 
 # ==================== РАСПИСАНИЕ (ДЛЯ ВСЕХ) ====================
@@ -251,48 +309,6 @@ def teacher_schedule():
     return redirect(url_for('schedule'))
 
 
-@app.route('/student/materials')
-@login_required_custom
-def student_materials():
-    """Страница материалов для студента"""
-    if session.get('role') != 'student':
-        return redirect(url_for('index'))
-    
-    current_group = session.get('group')
-    db_sess = db_session.create_session()
-    
-    # Получаем материалы для группы студента
-    materials = db_sess.query(Material).filter(
-        Material.group_name == current_group
-    ).order_by(Material.upload_date.desc()).all()
-    
-    # Получаем список уникальных предметов для фильтра
-    subjects = db_sess.query(Material.subject).filter(
-        Material.group_name == current_group
-    ).distinct().all()
-    subjects = [s[0] for s in subjects]
-    
-    db_sess.close()
-    
-    return render_template('materials.html', 
-                         materials=materials,
-                         subjects=subjects)
-
-
-@app.route('/student/profile')
-@login_required_custom
-def student_profile():
-    """Профиль студента"""
-    if session.get('role') != 'student':
-        return redirect(url_for('teacher_profile'))
-    
-    db_sess = db_session.create_session()
-    user = db_sess.query(User).get(session['user_id'])
-    db_sess.close()
-    
-    return render_template('profile.html', user=user)
-
-
 # ==================== ПРЕПОДАВАТЕЛЬ ====================
 
 @app.route('/teacher/dashboard')
@@ -308,7 +324,7 @@ def teacher_dashboard():
 @app.route('/teacher/materials')
 @login_required_custom
 def teacher_materials():
-    """Страница материалов для преподавателя"""
+    """Страница управления материалами для преподавателя"""
     if session.get('role') != 'teacher':
         return redirect(url_for('index'))
     
@@ -317,15 +333,161 @@ def teacher_materials():
     # Получаем все материалы
     materials = db_sess.query(Material).order_by(Material.upload_date.desc()).all()
     
-    # Получаем список уникальных предметов
-    subjects = db_sess.query(Material.subject).distinct().all()
-    subjects = [s[0] for s in subjects]
+    # Получаем список групп
+    groups = get_all_groups()
     
     db_sess.close()
     
-    return render_template('materials.html', 
+    # Получаем сообщения из URL параметров
+    success = request.args.get('success')
+    error = request.args.get('error')
+    
+    return render_template('teacher_materials.html', 
                          materials=materials,
-                         subjects=subjects)
+                         groups=groups,
+                         success=success,
+                         error=error)
+
+
+@app.route('/teacher/upload_material', methods=['POST'])
+@login_required_custom
+def upload_material():
+    """Загрузка нового материала"""
+    if session.get('role') != 'teacher':
+        return redirect(url_for('index'))
+    
+    try:
+        # Проверяем что файл загружен
+        if 'file' not in request.files:
+            return redirect(url_for('teacher_materials') + '?error=Файл не выбран')
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return redirect(url_for('teacher_materials') + '?error=Файл не выбран')
+        
+        if not allowed_file(file.filename):
+            return redirect(url_for('teacher_materials') + '?error=Недопустимый формат файла')
+        
+        # Получаем данные из формы
+        title = request.form.get('title')
+        group_name = request.form.get('group_name')
+        subject = request.form.get('subject')
+        file_type = request.form.get('file_type')
+        description = request.form.get('description', '')
+        teacher_name = request.form.get('teacher_name', session.get('username'))
+        
+        # Проверяем обязательные поля
+        if not all([title, group_name, subject, file_type]):
+            return redirect(url_for('teacher_materials') + '?error=Заполните все обязательные поля')
+        
+        # ========== ИСПРАВЛЕНИЕ: Безопасное имя файла с поддержкой русского ==========
+        original_filename = file.filename
+        
+        # Убираем опасные символы, но ОСТАВЛЯЕМ русские буквы
+        safe_chars = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+        safe_chars += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        safe_chars += "0123456789-_.()"
+        
+        filename = ""
+        for char in original_filename:
+            if char in safe_chars:
+                filename += char
+            elif char == " ":
+                filename += "_"  # Пробелы заменяем на подчёркивание
+        
+        # Если имя стало пустым (только спецсимволы были)
+        if not filename or filename == '.pdf':
+            # Используем название материала
+            name_from_title = ""
+            for char in title:
+                if char in safe_chars:
+                    name_from_title += char
+                elif char == " ":
+                    name_from_title += "_"
+            
+            # Получаем расширение
+            ext = os.path.splitext(original_filename)[1]
+            filename = name_from_title + ext
+        
+        print(f"📝 Оригинальное имя: {original_filename}")
+        print(f"📝 Безопасное имя: {filename}")
+        
+        # Создаём папку если её нет
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        
+        # Проверяем существование файла с таким именем
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        counter = 1
+        name, ext = os.path.splitext(filename)
+        
+        while os.path.exists(file_path):
+            filename = f"{name}_{counter}{ext}"
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            counter += 1
+        
+        # Сохраняем файл
+        file.save(file_path)
+        print(f"✅ Файл сохранён: {file_path}")
+        
+        # Добавляем в БД
+        db_sess = db_session.create_session()
+        
+        material = Material(
+            group_name=group_name,
+            subject=subject,
+            title=title,
+            description=description,
+            file_path=file_path,
+            file_type=file_type,
+            teacher_name=teacher_name,
+            upload_date=datetime.now()
+        )
+        
+        db_sess.add(material)
+        db_sess.commit()
+        db_sess.close()
+        
+        print(f"✅ Материал добавлен в БД: {title}")
+        
+        return redirect(url_for('teacher_materials') + '?success=Материал успешно загружен!')
+        
+    except Exception as e:
+        print(f"❌ Ошибка загрузки: {e}")
+        import traceback
+        traceback.print_exc()
+        return redirect(url_for('teacher_materials') + f'?error=Ошибка загрузки: {str(e)}')
+
+@app.route('/teacher/delete_material/<int:material_id>', methods=['POST'])
+@login_required_custom
+def delete_material(material_id):
+    """Удаление материала"""
+    if session.get('role') != 'teacher':
+        return redirect(url_for('index'))
+    
+    try:
+        db_sess = db_session.create_session()
+        
+        material = db_sess.query(Material).filter(Material.id == material_id).first()
+        
+        if material:
+            # Удаляем файл с диска
+            if os.path.exists(material.file_path):
+                os.remove(material.file_path)
+                print(f"✅ Файл удалён: {material.file_path}")
+            
+            # Удаляем из БД
+            db_sess.delete(material)
+            db_sess.commit()
+            print(f"✅ Материал удалён из БД: {material.title}")
+        
+        db_sess.close()
+        
+        return redirect(url_for('teacher_materials') + '?success=Материал удалён')
+        
+    except Exception as e:
+        print(f"❌ Ошибка удаления: {e}")
+        return redirect(url_for('teacher_materials') + f'?error=Ошибка удаления: {str(e)}')
 
 
 @app.route('/teacher/profile')
@@ -342,37 +504,9 @@ def teacher_profile():
     return render_template('profile.html', user=user)
 
 
-# ==================== API ====================
+# ==================== ЗАМЕТКИ ====================
 
-@app.route('/api/schedule/<group_name>')
-def api_schedule(group_name):
-    """API расписания"""
-    schedule_data = get_schedule_from_db(group_name)
-    return jsonify(schedule_data)
-
-
-@app.route('/api/schedule/<group_name>/week/<int:week_number>')
-def api_week(group_name, week_number):
-    """API недели"""
-    schedule_data = get_schedule_from_db(group_name)
-    week_data = schedule_data.get('недели', {}).get(str(week_number), {})
-    return jsonify({
-        'группа': group_name,
-        'неделя': week_number,
-        'расписание': week_data
-    })
-
-
-@app.route('/api/groups')
-def api_groups():
-    """API групп"""
-    groups = get_all_groups()
-    return jsonify(groups)
-
-
-# ==================== API ЗАМЕТОК ====================
-
-@app.route('/api/notes/save', methods=['POST'])
+@app.route('/notes/save', methods=['POST'])
 @login_required_custom
 def save_note():
     """Сохранить заметку"""
@@ -415,7 +549,7 @@ def save_note():
     return jsonify({'success': True, 'note': note_text})
 
 
-@app.route('/api/notes/delete', methods=['POST'])
+@app.route('/notes/delete', methods=['POST'])
 @login_required_custom
 def delete_note():
     """Удалить заметку"""
@@ -444,7 +578,7 @@ def delete_note():
     return jsonify({'success': True})
 
 
-@app.route('/api/notes/all', methods=['POST'])
+@app.route('/notes/all', methods=['POST'])
 @login_required_custom
 def get_all_notes():
     """Получить все заметки"""
@@ -469,12 +603,8 @@ def get_all_notes():
     
     return jsonify({'success': True, 'notes': notes_dict})
 
+
 # ==================== СКАЧИВАНИЕ ФАЙЛОВ ====================
-
-from flask import send_file, abort
-import os
-
-import unicodedata
 
 @app.route('/download/material/<int:material_id>')
 @login_required_custom
@@ -521,6 +651,8 @@ def download_material(material_id):
         
     finally:
         db_sess.close()
+
+
 # ==================== ОБРАБОТЧИКИ ОШИБОК ====================
 
 @app.errorhandler(404)
