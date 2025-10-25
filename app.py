@@ -132,7 +132,7 @@ def login():
                 db_sess.close()
                 return redirect(url_for('student_dashboard'))
             else:
-                session['subject'] = user.subject
+                # Для преподавателя НЕ добавляем subject в сессию
                 db_sess.close()
                 return redirect(url_for('teacher_dashboard'))
         
@@ -140,7 +140,6 @@ def login():
         return render_template('login.html', error='Неверный логин или пароль')
     
     return render_template('login.html')
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -152,7 +151,6 @@ def register():
         role = request.form.get('role')
         
         group_name = request.form.get('group_name') if role == 'student' else None
-        subject = request.form.get('subject') if role == 'teacher' else None
         
         db_sess = db_session.create_session()
         
@@ -167,8 +165,7 @@ def register():
             username=username,
             full_name=full_name,
             role=role,
-            group_name=group_name,
-            subject=subject
+            group_name=group_name
         )
         new_user.set_password(password)
         
@@ -181,8 +178,6 @@ def register():
         
         if new_user.is_student():
             session['group'] = new_user.group_name
-        else:
-            session['subject'] = new_user.subject
         
         db_sess.close()
         
@@ -330,8 +325,11 @@ def teacher_materials():
     
     db_sess = db_session.create_session()
     
-    # Получаем все материалы
-    materials = db_sess.query(Material).order_by(Material.upload_date.desc()).all()
+    # ИЗМЕНЕНО: Получаем ТОЛЬКО материалы этого преподавателя
+    teacher_name = session.get('username')
+    materials = db_sess.query(Material).filter(
+        Material.teacher_name == teacher_name
+    ).order_by(Material.upload_date.desc()).all()
     
     # Получаем список групп
     groups = get_all_groups()
@@ -347,7 +345,6 @@ def teacher_materials():
                          groups=groups,
                          success=success,
                          error=error)
-
 
 @app.route('/teacher/upload_material', methods=['POST'])
 @login_required_custom
@@ -375,13 +372,15 @@ def upload_material():
         subject = request.form.get('subject')
         file_type = request.form.get('file_type')
         description = request.form.get('description', '')
-        teacher_name = request.form.get('teacher_name', session.get('username'))
+        
+        # ФИО преподавателя АВТОМАТИЧЕСКИ из сессии
+        teacher_name = session.get('username')
         
         # Проверяем обязательные поля
         if not all([title, group_name, subject, file_type]):
             return redirect(url_for('teacher_materials') + '?error=Заполните все обязательные поля')
         
-        # ========== ИСПРАВЛЕНИЕ: Безопасное имя файла с поддержкой русского ==========
+        # Безопасное имя файла с поддержкой русского
         original_filename = file.filename
         
         # Убираем опасные символы, но ОСТАВЛЯЕМ русские буквы
@@ -394,11 +393,10 @@ def upload_material():
             if char in safe_chars:
                 filename += char
             elif char == " ":
-                filename += "_"  # Пробелы заменяем на подчёркивание
+                filename += "_"
         
-        # Если имя стало пустым (только спецсимволы были)
+        # Если имя стало пустым
         if not filename or filename == '.pdf':
-            # Используем название материала
             name_from_title = ""
             for char in title:
                 if char in safe_chars:
@@ -406,7 +404,6 @@ def upload_material():
                 elif char == " ":
                     name_from_title += "_"
             
-            # Получаем расширение
             ext = os.path.splitext(original_filename)[1]
             filename = name_from_title + ext
         
@@ -440,7 +437,7 @@ def upload_material():
             description=description,
             file_path=file_path,
             file_type=file_type,
-            teacher_name=teacher_name,
+            teacher_name=teacher_name,  # Автоматом из сессии!
             upload_date=datetime.now()
         )
         
@@ -449,6 +446,7 @@ def upload_material():
         db_sess.close()
         
         print(f"✅ Материал добавлен в БД: {title}")
+        print(f"👤 Преподаватель: {teacher_name}")
         
         return redirect(url_for('teacher_materials') + '?success=Материал успешно загружен!')
         

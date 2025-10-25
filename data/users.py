@@ -1,42 +1,40 @@
-import datetime
 import sqlalchemy
-import sqlalchemy.orm as orm
-from flask_login import UserMixin
-from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy import orm
 from werkzeug.security import generate_password_hash, check_password_hash
-
 from .db_session import SqlAlchemyBase
 
 
-class User(SqlAlchemyBase, UserMixin, SerializerMixin):
+class User(SqlAlchemyBase):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     username = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
-    hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    full_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # ФИО
+    password_hash = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    full_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     role = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # 'student' или 'teacher'
     
-    # Для студентов
-    group_name = sqlalchemy.Column(sqlalchemy.String)  # Группа студента
+    # Только для студентов
+    group_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     
-    # Для преподавателей
-    subject = sqlalchemy.Column(sqlalchemy.String)  # Предмет преподавателя
+    # УДАЛИЛИ subject - он больше не нужен!
     
-    created_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
-    is_admin = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
+    created_at = sqlalchemy.Column(sqlalchemy.DateTime, default=sqlalchemy.func.now())
 
     def set_password(self, password):
-        self.hashed_password = generate_password_hash(password)
+        """Хеширует пароль"""
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.hashed_password, password)
-    
+        """Проверяет пароль"""
+        return check_password_hash(self.password_hash, password)
+
     def is_student(self):
+        """Проверка роли студента"""
         return self.role == 'student'
-    
+
     def is_teacher(self):
+        """Проверка роли преподавателя"""
         return self.role == 'teacher'
 
     def __repr__(self):
-        return f'<User {self.username} ({self.role})>'
+        return f'<User {self.username}>'

@@ -176,11 +176,11 @@
                 <div class="form-group">
                     <label>Группа *</label>
                     <select class="form-select" name="group_name" required>
-                        <option value="">Выберите группу</option>
-                        {% for group in groups %}
-                        <option value="{{ group }}">{{ group }}</option>
-                        {% endfor %}
-                    </select>
+                    <option value="">Выберите группу</option>
+                    {% for group in groups %}
+                    <option value="{{ group }}">{{ group }}</option>
+                    {% endfor %}
+                </select>
                 </div>
             </div>
         </div>
@@ -197,12 +197,12 @@
                 <div class="form-group">
                     <label>Тип материала *</label>
                     <select class="form-select" name="file_type" required>
-                        <option value="">Выберите тип</option>
-                        <option value="Лекция">Лекция</option>
-                        <option value="Презентация">Презентация</option>
-                        <option value="Практика">Практическая работа</option>
-                        <option value="Другое">Другое</option>
-                    </select>
+                    <option value="">Выберите тип</option>
+                    <option value="Лекция">Лекция</option>
+                    <option value="Презентация">Презентация</option>
+                    <option value="Практика">Практическая работа</option>
+                    <option value="Другое">Другое</option>
+                </select>
                 </div>
             </div>
         </div>
@@ -210,11 +210,6 @@
         <div class="form-group">
             <label>Описание</label>
             <textarea class="form-control" name="description" rows="3" placeholder="Краткое описание материала (необязательно)"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Имя преподавателя</label>
-            <input type="text" class="form-control" name="teacher_name" value="{{ session.username }}" placeholder="Ваше имя">
         </div>
 
         <div class="form-group">
@@ -229,8 +224,8 @@
         </div>
 
         <button type="submit" class="btn btn-upload">
-            <i class="bi bi-cloud-upload"></i> Загрузить материал
-        </button>
+        <i class="bi bi-cloud-upload"></i> Загрузить материал
+    </button>
     </form>
 </div>
 
