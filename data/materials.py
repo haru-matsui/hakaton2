@@ -1,21 +1,23 @@
-import datetime
 import sqlalchemy
-from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
 
 
-class Material(SqlAlchemyBase, SerializerMixin):
+class Material(SqlAlchemyBase):
     __tablename__ = 'materials'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    group_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # Группа
-    subject = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # Предмет
-    title = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # Название материала
-    description = sqlalchemy.Column(sqlalchemy.Text)  # Описание
-    file_path = sqlalchemy.Column(sqlalchemy.String)  # Путь к файлу (презентация, PDF и т.д.)
-    file_type = sqlalchemy.Column(sqlalchemy.String)  # Тип файла (презентация, лекция, практика и т.д.)
-    upload_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
-    teacher_name = sqlalchemy.Column(sqlalchemy.String)  # ФИО преподавателя
+    group_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    subject = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    title = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    description = sqlalchemy.Column(sqlalchemy.Text, nullable=True)
+    file_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    file_type = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    teacher_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    upload_date = sqlalchemy.Column(sqlalchemy.DateTime, default=sqlalchemy.func.now())
+    
+    # НОВОЕ ПОЛЕ - кто загрузил (teacher или student)
+    uploaded_by_role = sqlalchemy.Column(sqlalchemy.String, default='teacher')
 
     def __repr__(self):
-        return f'<Material {self.title} ({self.group_name})>'
+        return f'<Material {self.title}>'

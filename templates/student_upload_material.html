@@ -142,11 +142,18 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
     }
+    
+    .auto-field {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        color: #495057;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %} {% block content %}
 <div class="page-header">
     <h1><i class="bi bi-upload"></i> Управление материалами</h1>
-    <p class="text-muted">Загрузка учебных материалов для студентов</p>
+    <p class="text-muted">Загрузка учебных материалов для вашей группы</p>
 </div>
 
 <!-- Форма загрузки -->
@@ -163,7 +170,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="/teacher/upload_material" enctype="multipart/form-data">
+    <form method="POST" action="/student/upload_material" enctype="multipart/form-data">
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
@@ -175,12 +182,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Группа *</label>
-                    <select class="form-select" name="group_name" required>
-                    <option value="">Выберите группу</option>
-                    {% for group in groups %}
-                    <option value="{{ group }}">{{ group }}</option>
-                    {% endfor %}
-                </select>
+                    <input type="text" class="form-control auto-field" value="{{ session.group }}" readonly>
+                    <input type="hidden" name="group_name" value="{{ session.group }}">
                 </div>
             </div>
         </div>
@@ -197,12 +200,12 @@
                 <div class="form-group">
                     <label>Тип материала *</label>
                     <select class="form-select" name="file_type" required>
-                    <option value="">Выберите тип</option>
-                    <option value="Лекция">Лекция</option>
-                    <option value="Презентация">Презентация</option>
-                    <option value="Практика">Практическая работа</option>
-                    <option value="Другое">Другое</option>
-                </select>
+                        <option value="">Выберите тип</option>
+                        <option value="Лекция">Лекция</option>
+                        <option value="Презентация">Презентация</option>
+                        <option value="Практика">Практическая работа</option>
+                        <option value="Другое">Другое</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -224,14 +227,14 @@
         </div>
 
         <button type="submit" class="btn btn-upload">
-        <i class="bi bi-cloud-upload"></i> Загрузить материал
-    </button>
+            <i class="bi bi-cloud-upload"></i> Загрузить материал
+        </button>
     </form>
 </div>
 
 <!-- Список загруженных материалов -->
 <div class="materials-list">
-    <h3><i class="bi bi-files"></i> Загруженные материалы</h3>
+    <h3><i class="bi bi-files"></i> Мои загруженные материалы</h3>
 
     {% if materials %} {% for material in materials %}
     <div class="material-item">
@@ -247,7 +250,7 @@
             <a href="/download/material/{{ material.id }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-download"></i> Скачать
             </a>
-            <form method="POST" action="/teacher/delete_material/{{ material.id }}" style="display: inline;" onsubmit="return confirm('Удалить этот материал?')">
+            <form method="POST" action="/student/delete_material/{{ material.id }}" style="display: inline;" onsubmit="return confirm('Удалить этот материал?')">
                 <button type="submit" class="btn btn-sm btn-delete">
                         <i class="bi bi-trash"></i> Удалить
                     </button>

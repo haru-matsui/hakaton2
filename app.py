@@ -241,9 +241,193 @@ def student_materials():
     
     db_sess.close()
     
-    return render_template('materials.html', 
+    # Получаем сообщения
+    success = request.args.get('success')
+    error = request.args.get('error')
+    
+    return render_template('student_materials.html', 
                          materials=materials,
-                         subjects=subjects)
+                         subjects=subjects,
+                         success=success,
+                         error=error)
+
+@app.route('/student/upload_material_page')
+@login_required_custom
+def student_upload_material_page():
+    """Страница загрузки материала для студента"""
+    if session.get('role') != 'student':
+        return redirect(url_for('index'))
+    
+    db_sess = db_session.create_session()
+    
+    # Получаем ТОЛЬКО материалы этого студента
+    student_name = session.get('username')
+    materials = db_sess.query(Material).filter(
+        Material.teacher_name == student_name,
+        Material.uploaded_by_role == 'student'
+    ).order_by(Material.upload_date.desc()).all()
+    
+    db_sess.close()
+    
+    # Получаем сообщения
+    success = request.args.get('success')
+    error = request.args.get('error')
+    
+    return render_template('student_upload_material.html',
+                         materials=materials,
+                         success=success,
+                         error=error)
+
+@app.route('/student/delete_material/<int:material_id>', methods=['POST'])
+@login_required_custom
+def student_delete_material(material_id):
+    """Удаление материала студентом"""
+    if session.get('role') != 'student':
+        return redirect(url_for('index'))
+    
+    db_sess = db_session.create_session()
+    
+    # Получаем материал
+    material = db_sess.query(Material).filter(Material.id == material_id).first()
+    
+    if not material:
+        db_sess.close()
+        return redirect(url_for('student_upload_material_page') + '?error=Материал не найден')
+    
+    # Проверяем что это материал этого студента
+    if material.teacher_name != session.get('username') or material.uploaded_by_role != 'student':
+        db_sess.close()
+        return redirect(url_for('student_upload_material_page') + '?error=Вы не можете удалить этот материал')
+    
+    try:
+        # Удаляем файл
+        if os.path.exists(material.file_path):
+            os.remove(material.file_path)
+            print(f"🗑️  Файл удалён: {material.file_path}")
+        
+        # Удаляем запись из БД
+        db_sess.delete(material)
+        db_sess.commit()
+        
+        print(f"✅ Материал удалён: {material.title}")
+        
+    except Exception as e:
+        print(f"❌ Ошибка удаления: {e}")
+        db_sess.rollback()
+        db_sess.close()
+        return redirect(url_for('student_upload_material_page') + f'?error=Ошибка удаления: {str(e)}')
+    
+    db_sess.close()
+    return redirect(url_for('student_upload_material_page') + '?success=Материал успешно удалён')
+
+@app.route('/student/upload_material', methods=['POST'])
+@login_required_custom
+def student_upload_material():
+    """Загрузка материала студентом"""
+    if session.get('role') != 'student':
+        return redirect(url_for('index'))
+    
+    try:
+        # Проверяем что файл загружен
+        if 'file' not in request.files:
+            return redirect(url_for('student_upload_material_page') + '?error=Файл не выбран')
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return redirect(url_for('student_upload_material_page') + '?error=Файл не выбран')
+        
+        if not allowed_file(file.filename):
+            return redirect(url_for('student_upload_material_page') + '?error=Недопустимый формат файла')
+        
+        # Получаем данные из формы
+        title = request.form.get('title')
+        subject = request.form.get('subject')
+        file_type = request.form.get('file_type')
+        description = request.form.get('description', '')
+        
+        # Группа и ФИО автоматически
+        group_name = session.get('group')
+        student_name = session.get('username')
+        
+        # Проверяем обязательные поля
+        if not all([title, subject, file_type]):
+            return redirect(url_for('student_upload_material_page') + '?error=Заполните все обязательные поля')
+        
+        # Безопасное имя файла с поддержкой русского
+        original_filename = file.filename
+        
+        safe_chars = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+        safe_chars += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        safe_chars += "0123456789-_.()"
+        
+        filename = ""
+        for char in original_filename:
+            if char in safe_chars:
+                filename += char
+            elif char == " ":
+                filename += "_"
+        
+        if not filename or filename == '.pdf':
+            name_from_title = ""
+            for char in title:
+                if char in safe_chars:
+                    name_from_title += char
+                elif char == " ":
+                    name_from_title += "_"
+            
+            ext = os.path.splitext(original_filename)[1]
+            filename = name_from_title + ext
+        
+        print(f"📝 Оригинальное имя: {original_filename}")
+        print(f"📝 Безопасное имя: {filename}")
+        
+        # Создаём папку если её нет
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        
+        # Проверяем существование файла с таким именем
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        counter = 1
+        name, ext = os.path.splitext(filename)
+        
+        while os.path.exists(file_path):
+            filename = f"{name}_{counter}{ext}"
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            counter += 1
+        
+        # Сохраняем файл
+        file.save(file_path)
+        print(f"✅ Файл сохранён: {file_path}")
+        
+        # Добавляем в БД
+        db_sess = db_session.create_session()
+        
+        material = Material(
+            group_name=group_name,
+            subject=subject,
+            title=title,
+            description=description,
+            file_path=file_path,
+            file_type=file_type,
+            teacher_name=student_name,  # ФИО студента
+            upload_date=datetime.now(),
+            uploaded_by_role='student'  # ПОМЕЧАЕМ КАК ОТ СТУДЕНТА!
+        )
+        
+        db_sess.add(material)
+        db_sess.commit()
+        db_sess.close()
+        
+        print(f"✅ Материал добавлен студентом: {title}")
+        print(f"👤 Студент: {student_name}")
+        
+        return redirect(url_for('student_materials') + '?success=Материал успешно загружен!')
+        
+    except Exception as e:
+        print(f"❌ Ошибка загрузки: {e}")
+        import traceback
+        traceback.print_exc()
+        return redirect(url_for('student_upload_material_page') + f'?error=Ошибка загрузки: {str(e)}')
 
 
 @app.route('/student/profile')
@@ -451,7 +635,8 @@ def upload_material():
             file_path=file_path,
             file_type=file_type,
             teacher_name=teacher_name,  # Автоматом из сессии!
-            upload_date=datetime.now()
+            upload_date=datetime.now(),
+            uploaded_by_role='teacher'
         )
         
         db_sess.add(material)
