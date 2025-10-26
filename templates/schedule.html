@@ -25,13 +25,7 @@
         background: white;
         border-radius: 10px;
         cursor: pointer;
-        transition: all 0.3s;
         font-weight: 500;
-    }
-    
-    .group-btn:hover {
-        border-color: var(--primary-color);
-        background: #e8e8e8;
     }
     
     .group-btn.active {
@@ -55,12 +49,6 @@
         border-radius: 10px;
         padding: 10px 20px;
         cursor: pointer;
-        transition: all 0.3s;
-    }
-    
-    .week-selector button:hover {
-        background: var(--primary-color);
-        color: white;
     }
     
     .week-selector h4 {
@@ -85,12 +73,7 @@
         border: 2px solid #e8e8e8;
         border-radius: 10px;
         cursor: pointer;
-        transition: all 0.3s;
         text-align: center;
-    }
-    
-    .tab-btn:hover {
-        border-color: var(--primary-color);
     }
     
     .tab-btn.active {
@@ -137,15 +120,10 @@
         color: white;
     }
     
-    .note-btn:hover {
-        background: var(--primary-hover);
-        opacity: 0.9;
-    }
-    
     .note-text {
         background: #cbb8ff;
-        border: 2px solid var(--warning-color);
-        color: #2a1468;
+        border: none;
+        color: white;
         max-width: 300px;
         word-wrap: break-word;
     }
@@ -156,12 +134,6 @@
         padding: 20px;
         margin-bottom: 15px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s;
-    }
-    
-    .lesson:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
     
     .lesson.type0 {
@@ -400,7 +372,7 @@
             // Заметка
             html += `<div id="note-${currentWeek}-${dayName}">`;
             if (note) {
-                html += `<span class="note-text" onclick="editNote(${currentWeek}, '${dayName}')">📝 ${note}</span>`;
+                html += `<span class="note-text" onclick="editNote(${currentWeek}, '${dayName}')">${note}</span>`;
             } else {
                 html += `<button class="note-btn" onclick="editNote(${currentWeek}, '${dayName}')">+ Заметка</button>`;
             }
