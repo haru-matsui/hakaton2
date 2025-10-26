@@ -10,13 +10,13 @@
     }
     
     .materials-header h1 {
-        color: #333;
+        color: #2a1468;
         font-weight: 700;
         margin-bottom: 10px;
     }
     
     .btn-add-material {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        background: var(--primary-color);
         color: white;
         border: none;
         padding: 12px 30px;
@@ -31,8 +31,9 @@
     }
     
     .btn-add-material:hover {
+        background: var(--primary-hover);
         transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 25px rgba(77, 25, 204, 0.4);
         color: white;
     }
     
@@ -55,7 +56,7 @@
     }
     
     .material-card.from-teacher {
-        border-left: 5px solid #ffc107;
+        border-left: 5px solid var(--warning-color);
     }
     
     .material-header {
@@ -68,7 +69,7 @@
     .material-title {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #333;
+        color: #2a1468;
         margin-bottom: 10px;
     }
     
@@ -82,11 +83,12 @@
     }
     
     .badge-teacher {
-        background: #ffc107;
+        background: var(--warning-color);
+        color: #2a1468;
     }
     
     .badge-student {
-        background: #4866eb;
+        background: var(--primary-color);
         color: white;
     }
     
@@ -94,7 +96,7 @@
         display: flex;
         gap: 20px;
         flex-wrap: wrap;
-        color: #666;
+        color: #2a1468;
         font-size: 0.9rem;
         margin-bottom: 15px;
     }
@@ -110,13 +112,13 @@
     }
     
     .material-description {
-        color: #666;
+        color: #2a1468;
         margin-bottom: 20px;
         line-height: 1.6;
     }
     
     .btn-download {
-        background: #413beb;
+        background: var(--primary-color);
         color: white;
         padding: 10px 25px;
         border-radius: 10px;
@@ -127,11 +129,15 @@
         font-weight: 600;
         transition: all 0.3s;
     }
+
+    .btn-download:hover {
+        background: var(--primary-hover);
+    }
     
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #999;
+        color: #aa92ff;
     }
     
     .empty-state i {
@@ -146,15 +152,15 @@
     }
     
     .alert-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: #c1f26b;
+        color: #2a1468;
+        border: 1px solid var(--success-color);
     }
     
     .alert-danger {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: #ffa039;
+        color: #2a1468;
+        border: 1px solid var(--danger-color);
     }
 </style>
 {% endblock %} {% block content %}
