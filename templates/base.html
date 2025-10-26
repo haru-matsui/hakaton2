@@ -34,6 +34,16 @@
         }
         /* Навигация */
         
+        .dropdown-toggle::after {
+            transform: rotate(0deg);
+            transition: transform 0.3s ease;
+        }
+        /* Когда меню открыто - возвращаем обратно */
+        
+        .dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+        
         .navbar {
             background: var(--primary-color) !important;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -47,11 +57,6 @@
         .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
             transition: all 0.3s;
-        }
-        
-        .nav-link:hover {
-            color: white !important;
-            transform: translateY(-2px);
         }
         /* Карточки */
         
@@ -123,7 +128,7 @@
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand">
                 <i class="bi bi-mortarboard-fill me-2"></i> Личный кабинет УУНиТ
             </a>
 
@@ -134,11 +139,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if session.user_id %} {% if session.role == 'student' %}
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/student/dashboard">
-                            <i class="bi bi-house-fill"></i> Главная
-                        </a>
-                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="/schedule">
                             <i class="bi bi-calendar3"></i> Расписание
@@ -147,6 +148,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/student/materials">
                             <i class="bi bi-book-fill"></i> Материалы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/tgbot">
+                            <i class="bi bi-chat-fill"></i> Обратная связь
                         </a>
                     </li>
 
@@ -166,11 +172,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/teacher/materials">
                             <i class="bi bi-book-fill"></i> Материалы
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/teacher/grades">
-                            <i class="bi bi-clipboard-data-fill"></i> Успеваемость
                         </a>
                     </li>
                 </ul>

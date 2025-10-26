@@ -13,8 +13,6 @@ class Note(SqlAlchemyBase, SerializerMixin):
     week_number = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
     day_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)  # Понедельник, Вторник и т.д.
     note_text = sqlalchemy.Column(sqlalchemy.String(64), nullable=False)  # Максимум 64 символа
-    created_at = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
-    updated_at = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
         return f'<Note user_id={self.user_id} {self.day_name} week={self.week_number}>'
