@@ -13,17 +13,9 @@
         padding: 30px;
         text-align: center;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s;
         text-decoration: none;
         color: inherit;
         display: block;
-    }
-    
-    .card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        text-decoration: none;
-        color: inherit;
     }
     
     .card i {
@@ -67,7 +59,7 @@
 </style>
 {% endblock %} {% block content %}
 <div class="welcome-section">
-    <h2>👋 Добро пожаловать, {{ session.username }}!</h2>
+    <h2>Добро пожаловать, {{ session.username }}!</h2>
     <p>Панель управления преподавателя</p>
 </div>
 
