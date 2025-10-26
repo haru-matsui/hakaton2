@@ -133,18 +133,19 @@
     }
     
     .note-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary-color);
         color: white;
     }
     
     .note-btn:hover {
+        background: var(--primary-hover);
         opacity: 0.9;
     }
     
     .note-text {
-        background: #fff3cd;
-        border: 2px solid #ffc107;
-        color: #856404;
+        background: #cbb8ff;
+        border: 2px solid var(--warning-color);
+        color: #2a1468;
         max-width: 300px;
         word-wrap: break-word;
     }
@@ -164,20 +165,20 @@
     }
     
     .lesson.type0 {
-        border-left: 5px solid #4e49e7;
+        border-left: 5px solid var(--primary-color);
     }
     
     .lesson.type1 {
-        border-left: 5px solid #28a745;
+        border-left: 5px solid var(--success-color);
     }
     
     .lesson.type15 {
-        border-left: 5px solid #ffc107;
+        border-left: 5px solid var(--warning-color);
     }
     
     .lesson.nothing {
-        border-left: 5px solid #6c757d;
-        background: #f8f9fa;
+        border-left: 5px solid var(--secondary-color);
+        background: #e8e8e8;
     }
     
     .lesson .time {
