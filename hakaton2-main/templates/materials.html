@@ -1,0 +1,237 @@
+{% extends "base.html" %} {% block title %}Учебные материалы{% endblock %} {% block extra_css %}
+<style>
+    .materials-filters {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+    
+    .filter-group {
+        margin-bottom: 15px;
+    }
+    
+    .filter-group:last-child {
+        margin-bottom: 0;
+    }
+    
+    .filter-group label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    
+    .material-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        border-left: 5px solid var(--primary-color);
+    }
+    
+    .material-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+    
+    .material-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+    }
+    
+    .material-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .material-description {
+        color: #555;
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    
+    .material-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .file-type-badge {
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .badge-presentation {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .badge-lecture {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+    
+    .badge-practice {
+        background: #e8f5e9;
+        color: #388e3c;
+    }
+    
+    .badge-other {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+    
+    .no-materials {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+    
+    .no-materials i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %} {% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-book-fill"></i> Учебные материалы</h1>
+    <p class="text-muted">Лекции, презентации и учебные пособия</p>
+    <p style="font-size: 20px;">Автоматическая фильтрация по группе - когда студент заходит на страницу материалов, ему показываются ТОЛЬКО материалы его группы</p>
+
+</div>
+
+<!-- Фильтры -->
+<div class="materials-filters">
+    <div class="row">
+        <div class="col-md-6 filter-group">
+            <label>Предмет</label>
+            <select class="form-select" id="subjectFilter" onchange="filterMaterials()">
+                <option value="">Все предметы</option>
+                {% for subject in subjects %}
+                <option value="{{ subject }}">{{ subject }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 filter-group">
+            <label>Тип материала</label>
+            <select class="form-select" id="typeFilter" onchange="filterMaterials()">
+                <option value="">Все типы</option>
+                <option value="Презентация">Презентации</option>
+                <option value="Лекция">Лекции</option>
+                <option value="Практика">Практические работы</option>
+                <option value="Другое">Другое</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Список материалов -->
+<div id="materialsContainer">
+    {% if materials %} {% for material in materials %}
+    <div class="material-card" data-subject="{{ material.subject }}" data-type="{{ material.file_type }}">
+        <div class="material-header">
+            <h3 class="material-title">{{ material.title }}</h3>
+            {% if material.file_type == 'Презентация' %}
+            <span class="file-type-badge badge-presentation">
+                    <i class="bi bi-file-earmark-slides"></i> Презентация
+                </span> {% elif material.file_type == 'Лекция' %}
+            <span class="file-type-badge badge-lecture">
+                    <i class="bi bi-file-earmark-text"></i> Лекция
+                </span> {% elif material.file_type == 'Практика' %}
+            <span class="file-type-badge badge-practice">
+                    <i class="bi bi-file-earmark-code"></i> Практика
+                </span> {% else %}
+            <span class="file-type-badge badge-other">
+                    <i class="bi bi-file-earmark"></i> Другое
+                </span> {% endif %}
+        </div>
+
+        <div class="material-meta">
+            <div class="meta-item">
+                <i class="bi bi-book"></i>
+                <span>{{ material.subject }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-people"></i>
+                <span>{{ material.group_name }}</span>
+            </div>
+            {% if material.teacher_name %}
+            <div class="meta-item">
+                <i class="bi bi-person"></i>
+                <span>{{ material.teacher_name }}</span>
+            </div>
+            {% endif %}
+            <div class="meta-item">
+                <i class="bi bi-calendar"></i>
+                <span>{{ material.upload_date.strftime('%d.%m.%Y') }}</span>
+            </div>
+        </div>
+
+        {% if material.description %}
+        <div class="material-description">
+            {{ material.description }}
+        </div>
+        {% endif %}
+
+        <div class="material-footer">
+            {% if material.file_path %}
+            <a href="/download/material/{{ material.id }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-download"></i> Скачать
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %} {% else %}
+    <div class="no-materials">
+        <i class="bi bi-inbox"></i>
+        <h3>Материалов пока нет</h3>
+        <p class="text-muted">Материалы появятся после добавления преподавателем</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function filterMaterials() {
+        const subjectFilter = document.getElementById('subjectFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const materials = document.querySelectorAll('.material-card');
+
+        materials.forEach(material => {
+            const subject = material.dataset.subject;
+            const type = material.dataset.type;
+
+            const subjectMatch = !subjectFilter || subject === subjectFilter;
+            const typeMatch = !typeFilter || type === typeFilter;
+
+            if (subjectMatch && typeMatch) {
+                material.style.display = 'block';
+            } else {
+                material.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

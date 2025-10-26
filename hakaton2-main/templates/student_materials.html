@@ -1,0 +1,279 @@
+{% extends "base.html" %} {% block title %}Материалы{% endblock %} {% block extra_css %}
+<style>
+    .materials-container {
+        padding: 40px 0;
+    }
+    
+    .materials-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .materials-header h1 {
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .btn-add-material {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 30px;
+        transition: all 0.3s;
+    }
+    
+    .btn-add-material:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+    
+    .material-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+        border-left: 5px solid var(--primary-color);
+    }
+    
+    .material-card.from-teacher {
+        border-left: 5px solid #ffc107;
+    }
+    
+    .material-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+    
+    .material-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .material-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    
+    .badge-teacher {
+        background: #ffc107;
+    }
+    
+    .badge-student {
+        background: #4866eb;
+        color: white;
+    }
+    
+    .material-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .meta-item i {
+        color: var(--primary-color);
+    }
+    
+    .material-description {
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .btn-download {
+        background: #413beb;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+    
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+{% endblock %} {% block content %}
+<div class="container materials-container">
+    <div class="materials-header">
+        <h1><i class="bi bi-book"></i> Материалы для обучения</h1>
+        <p class="text-muted">Группа: {{ session.group }}</p>
+    </div>
+
+    <div class="text-center">
+        <a href="/student/upload_material_page" class="btn-add-material">
+            <i class="bi bi-plus-circle"></i> Добавить материал
+        </a>
+    </div>
+
+    {% if success %}
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle"></i> {{ success }}
+    </div>
+    {% endif %} {% if error %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="filter-section">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <label><i class="bi bi-funnel"></i> Фильтр по предмету:</label>
+                <select class="form-select" id="subjectFilter" onchange="filterMaterials()">
+                    <option value="">Все предметы</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject }}">{{ subject }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label><i class="bi bi-funnel"></i> Фильтр по типу:</label>
+                <select class="form-select" id="typeFilter" onchange="filterMaterials()">
+                    <option value="">Все типы</option>
+                    <option value="Лекция">Лекции</option>
+                    <option value="Презентация">Презентации</option>
+                    <option value="Практика">Практические</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="materialsContainer">
+        {% if materials %} {% for material in materials %}
+        <div class="material-card {% if material.uploaded_by_role == 'teacher' %}from-teacher{% endif %}" data-subject="{{ material.subject }}" data-type="{{ material.file_type }}">
+            <div class="material-header">
+                <div>
+                    <div class="material-title">
+                        {{ material.title }} {% if material.uploaded_by_role == 'teacher' %}
+                        <span class="material-badge badge-teacher">
+                                    <i class="bi bi-person-workspace"></i> От преподавателя
+                                </span> {% else %}
+                        <span class="material-badge badge-student">
+                                    <i class="bi bi-person-badge"></i> От студента
+                                </span> {% endif %}
+                    </div>
+                    <div class="material-meta">
+                        <span class="meta-item">
+                                <i class="bi bi-book"></i> {{ material.subject }}
+                            </span>
+                        <span class="meta-item">
+                                <i class="bi bi-tag"></i> {{ material.file_type }}
+                            </span>
+                        <span class="meta-item">
+                                <i class="bi bi-person-circle"></i> {{ material.teacher_name }}
+                            </span>
+                        <span class="meta-item">
+                                <i class="bi bi-calendar"></i> {{ material.upload_date.strftime('%d.%m.%Y') }}
+                            </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if material.description %}
+            <div class="material-description">
+                {{ material.description }}
+            </div>
+            {% endif %}
+
+            <a href="/download/material/{{ material.id }}" class="btn-download">
+                <i class="bi bi-download"></i> Скачать
+            </a>
+        </div>
+        {% endfor %} {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>Материалов пока нет</h3>
+            <p>Преподаватели ещё не загрузили материалы для вашей группы</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function filterMaterials() {
+        const subjectFilter = document.getElementById('subjectFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const cards = document.querySelectorAll('.material-card');
+
+        cards.forEach(card => {
+            const subject = card.dataset.subject;
+            const type = card.dataset.type;
+
+            const subjectMatch = !subjectFilter || subject === subjectFilter;
+            const typeMatch = !typeFilter || type === typeFilter;
+
+            if (subjectMatch && typeMatch) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
