@@ -4,7 +4,7 @@ import json
 import re
 from datetime import datetime
 from collections import OrderedDict
-from data import db_session
+from data import sion
 from data.schedule import Schedule
 
 class ScheduleParser:
@@ -30,27 +30,27 @@ class ScheduleParser:
             response.raise_for_status()
             html_content = response.text
             dates = self.extract_dates_from_html(html_content)
-            schedule_scripts = re.findall(r"\$\('#(\d+_\d+_group)'\)\.append\('(.+?)'\);", html_content)
-            week_schedule = OrderedDict()
+            ss = re.findall(r"\$\('#(\d+_\d+_group)'\)\.append\('(.+?)'\);", html_content)
+            ws = OrderedDict()
             for day_name in self.weekdays_order:
-                week_schedule[day_name] = {'дата': dates.get(day_name, ''), 'пары': []}
-            for cell_id, content in schedule_scripts:
+                ws[day_name] = {'дата': dates.get(day_name, ''), 'пары': []}
+            for cell_id, content in ss:
                 match = re.match(r'(\d+)_(\d+)_group', cell_id)
                 if match:
                     lesson_number = match.group(1)
                     day_number = match.group(2)
-                    lesson_info = self.parse_lesson_content(content)
-                    if lesson_info:
+                    li = self.parse_lesson_content(content)
+                    if li:
                         day_name = self.weekdays.get(day_number, f'День {day_number}')
-                        if day_name in week_schedule:
-                            week_schedule[day_name]['пары'].append({'номер_пары': int(lesson_number), 'время': self.time_slots.get(lesson_number, ''), **lesson_info})
-            for day in week_schedule:
-                week_schedule[day]['пары'] = sorted(week_schedule[day]['пары'], key=lambda x: x['номер_пары'])
-            week_schedule_filtered = OrderedDict()
-            for day, data in week_schedule.items():
+                        if day_name in ws:
+                            ws[day_name]['пары'].append({'номер_пары': int(lesson_number), 'время': self.time_slots.get(lesson_number, ''), **li})
+            for day in ws:
+                ws[day]['пары'] = sorted(ws[day]['пары'], key=lambda x: x['номер_пары'])
+            ws_filtered = OrderedDict()
+            for day, data in ws.items():
                 if data['пары']:
-                    week_schedule_filtered[day] = data
-            return week_schedule_filtered
+                    ws_filtered[day] = data
+            return ws_filtered
         except Exception as e:
             return {}
     
@@ -84,20 +84,20 @@ class ScheduleParser:
     
     def save_to_database(self, group_id, group_name, week_number, week_data):
         try:
-            db_sess = db_session.create_session()
-            db_sess.query(Schedule).filter(Schedule.group_id == group_id, Schedule.week_number == week_number).delete()
+            s = sion.create_session()
+            s.query(Schedule).filter(Schedule.group_id == group_id, Schedule.week_number == week_number).delete()
             for day_name, day_data in week_data.items():
                 date_str = day_data.get('дата', '')
                 for lesson in day_data['пары']:
                     schedule_entry = Schedule(group_name=group_name, group_id=group_id, week_number=week_number, day_name=day_name, date=date_str, lesson_number=lesson['номер_пары'], time_slot=lesson['время'], subject=lesson['предмет'], lesson_type=lesson['тип'], teacher=lesson['преподаватель'], classroom=lesson['аудитория'], last_updated=datetime.now())
-                    db_sess.add(schedule_entry)
-            db_sess.commit()
+                    s.add(schedule_entry)
+            s.commit()
             return True
         except Exception as e:
-            db_sess.rollback()
+            s.rollback()
             return False
         finally:
-            db_sess.close()
+            s.close()
     
     def parse_semester(self, group_id, group_name, start_week=1, end_week=18):
         successful_weeks = 0
@@ -127,7 +127,7 @@ def load_groups(filename='groups.json'):
 
 
 def main():
-    db_session.global_init('db/university.db')
+    sion.global_init('db/university.db')
     parser = ScheduleParser()
     groups = load_groups('groups.json')
     print("🚀 Запуск парсера...")
