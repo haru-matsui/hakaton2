@@ -58,6 +58,8 @@ def get_schedule_from_db(group_name):
                     'дата': entry.date,
                     'пары': []
                 }
+            
+                
 
             weeks[week_num][day_name]['пары'].append({
                 'номер_пары': entry.lesson_number,

@@ -70,7 +70,7 @@
     }
     
     .info-value {
-        color: #2a1468;
+        color: #000000;
         flex: 1;
     }
     
@@ -82,12 +82,12 @@
     }
     
     .badge-student {
-        background: #cbb8ff;
+        background: var(--primary-hover);
         color: white;
     }
     
     .badge-teacher {
-        background: #aa92ff;
+        background: var(--success-color);
         color: white;
     }
 </style>
@@ -105,7 +105,7 @@
                 </div>
                 <div class="profile-info">
                     <h2>{{ user.full_name }}</h2>
-                    <p class="text-muted">@{{ user.username }}</p>
+                    <p class="text-muted" style="padding-bottom: 10px;">@{{ user.username }}</p>
                     {% if user.role == 'student' %}
                     <span class="badge-role badge-student">
                         <i class="bi bi-person-badge"></i> Студент
