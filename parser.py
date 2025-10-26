@@ -4,7 +4,7 @@ import json
 import re
 from datetime import datetime
 from collections import OrderedDict
-from data import sion
+from data import db_session
 from data.schedule import Schedule
 
 class ScheduleParser:
@@ -84,7 +84,7 @@ class ScheduleParser:
     
     def save_to_database(self, group_id, group_name, week_number, week_data):
         try:
-            s = sion.create_session()
+            s = db_session.create_session()
             s.query(Schedule).filter(Schedule.group_id == group_id, Schedule.week_number == week_number).delete()
             for day_name, day_data in week_data.items():
                 date_str = day_data.get('дата', '')
@@ -127,7 +127,7 @@ def load_groups(filename='groups.json'):
 
 
 def main():
-    sion.global_init('db/university.db')
+    db_session.global_init('db/university.db')
     parser = ScheduleParser()
     groups = load_groups('groups.json')
     print("🚀 Запуск парсера...")

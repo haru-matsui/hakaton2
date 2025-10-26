@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from functools import wraps
 import unicodedata
-from data import sion
+from data import db_session
 from data.users import User
 from data.schedule import Schedule
 from data.notes import Note
@@ -21,7 +21,7 @@ def allowed_file(filename):
 
 
 def get_schedule_from_db(group_name):
-    s = sion.create_session()
+    s = db_session.create_session()
     try:
         e = s.query(Schedule).filter(Schedule.group_name == group_name).order_by(Schedule.week_number, Schedule.lesson_number).all()
         if not e:
@@ -44,7 +44,7 @@ def get_schedule_from_db(group_name):
 
 
 def get_all_groups():
-    s = sion.create_session()
+    s = db_session.create_session()
     try:
         groups = s.query(Schedule.group_name).distinct().all()
         return [group[0] for group in groups]
@@ -77,7 +77,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('login')
         password = request.form.get('password')
-        s = sion.create_session()
+        s = db_session.create_session()
         user = s.query(User).filter(User.username == username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
@@ -103,7 +103,7 @@ def register():
         full_name = request.form.get('full_name')
         role = request.form.get('role')
         group_name = request.form.get('group_name') if role == 'student' else None
-        s = sion.create_session()
+        s = db_session.create_session()
         existing_user = s.query(User).filter(User.username == username).first()
         if existing_user:
             s.close()
@@ -148,7 +148,7 @@ def student_materials():
     if session.get('role') != 'student':
         return redirect(url_for('index'))
     current_group = session.get('group')
-    s = sion.create_session()
+    s = db_session.create_session()
     materials = s.query(Material).filter(Material.group_name == current_group).order_by(Material.upload_date.desc()).all()
     subjects = s.query(Material.subject).filter(Material.group_name == current_group).distinct().all()
     subjects = [s[0] for s in subjects]
@@ -163,7 +163,7 @@ def student_materials():
 def student_upload_material_page():
     if session.get('role') != 'student':
         return redirect(url_for('index'))
-    s = sion.create_session()
+    s = db_session.create_session()
     student_name = session.get('username')
     materials = s.query(Material).filter(Material.teacher_name == student_name, Material.uploaded_by_role == 'student').order_by(Material.upload_date.desc()).all()
     s.close()
@@ -177,7 +177,7 @@ def student_upload_material_page():
 def student_delete_material(material_id):
     if session.get('role') != 'student':
         return redirect(url_for('index'))
-    s = sion.create_session()
+    s = db_session.create_session()
     material = s.query(Material).filter(Material.id == material_id).first()
     if not material:
         s.close()
@@ -245,7 +245,7 @@ def student_upload_material():
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             counter += 1
         file.save(file_path)
-        s = sion.create_session()
+        s = db_session.create_session()
         material = Material(group_name=group_name, subject=subject, title=title, description=description, file_path=file_path, file_type=file_type, teacher_name=student_name, upload_date=datetime.now(), uploaded_by_role='student')
         s.add(material)
         s.commit()
@@ -262,7 +262,7 @@ def student_upload_material():
 def student_profile():
     if session.get('role') != 'student':
         return redirect(url_for('teacher_profile'))
-    s = sion.create_session()
+    s = db_session.create_session()
     user = s.query(User).get(session['user_id'])
     s.close()
     return render_template('profile.html', user=user)
@@ -308,7 +308,7 @@ def teacher_dashboard():
 def teacher_materials():
     if session.get('role') != 'teacher':
         return redirect(url_for('index'))
-    s = sion.create_session()
+    s = db_session.create_session()
     teacher_name = session.get('username')
     materials = s.query(Material).filter(Material.teacher_name == teacher_name).order_by(Material.upload_date.desc()).all()
     groups = get_all_groups()
@@ -365,7 +365,7 @@ def upload_material():
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             counter += 1
         file.save(file_path)
-        s = sion.create_session()
+        s = db_session.create_session()
         material = Material(group_name=group_name, subject=subject, title=title, description=description, file_path=file_path, file_type=file_type, teacher_name=teacher_name, upload_date=datetime.now(), uploaded_by_role='teacher')
         s.add(material)
         s.commit()
@@ -383,7 +383,7 @@ def delete_material(material_id):
     if session.get('role') != 'teacher':
         return redirect(url_for('index'))
     try:
-        s = sion.create_session()
+        s = db_session.create_session()
         material = s.query(Material).filter(Material.id == material_id).first()
         if material:
             if os.path.exists(material.file_path):
@@ -401,7 +401,7 @@ def delete_material(material_id):
 def teacher_profile():
     if session.get('role') != 'teacher':
         return redirect(url_for('student_profile'))
-    s = sion.create_session()
+    s = db_session.create_session()
     user = s.query(User).get(session['user_id'])
     s.close()
     return render_template('profile.html', user=user)
@@ -437,7 +437,7 @@ def save_note():
     note_text = data.get('note_text', '').strip()[:64]
     if not note_text:
         return jsonify({'success': False, 'error': 'Заметка пустая'})
-    s = sion.create_session()
+    s = db_session.create_session()
     note = s.query(Note).filter(Note.user_id == user_id, Note.group_name == group_name, Note.week_number == week_number, Note.day_name == day_name).first()
     if note:
         note.note_text = note_text
@@ -458,7 +458,7 @@ def delete_note():
     group_name = data.get('group_name')
     week_number = data.get('week_number')
     day_name = data.get('day_name')
-    s = sion.create_session()
+    s = db_session.create_session()
     note = s.query(Note).filter(Note.user_id == user_id, Note.group_name == group_name, Note.week_number == week_number, Note.day_name == day_name).first()
     if note:
         s.delete(note)
@@ -473,7 +473,7 @@ def get_all_notes():
     data = request.get_json()
     user_id = session.get('user_id')
     group_name = data.get('group_name')
-    s = sion.create_session()
+    s = db_session.create_session()
     notes = s.query(Note).filter(Note.user_id == user_id, Note.group_name == group_name).all()
     notes_dict = {}
     for note in notes:
@@ -487,7 +487,7 @@ def get_all_notes():
 @app.route('/download/material/<int:material_id>')
 @login_required_custom
 def download_material(material_id):
-    s = sion.create_session()
+    s = db_session.create_session()
     try:
         material = s.query(Material).filter(Material.id == material_id).first()
         if not material:
@@ -514,6 +514,6 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 if __name__ == '__main__':
-    sion.global_init('db/university.db')
+    db_session.global_init('db/university.db')
     print("🚀 Запуск приложения...")
     app.run(debug=True, use_reloader=False)

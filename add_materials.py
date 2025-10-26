@@ -1,11 +1,11 @@
-from data import sion
+from data import db_session
 from data.materials import Material
 from datetime import datetime
 import os
 
 def add_materials():
-    sion.global_init('db/university.db')
-    s = sion.create_session()
+    db_session.global_init('db/university.db')
+    s = db_session.create_session()
     try:
         materials_list = [
             {'group_name': 'ТОП-103Б', 'subject': 'Матан', 'file_path': 'static/materials/Математический_анализ_ТОП_ИТ_Лекция_7.pdf', 'description': 'описание..', 'file_type': 'Лекция', 'teacher_name': 'Кужаев А.Ф.'},
