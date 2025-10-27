@@ -4,4 +4,4 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 sqlalchemy
 sqlalchemy_serializer
-aiogram
+aiogram==3.13.1
