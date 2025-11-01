@@ -1,24 +1,45 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort
 from collections import OrderedDict
 import os
 from datetime import datetime
 from functools import wraps
 import unicodedata
+
+# ==================== ИНИЦИАЛИЗАЦИЯ FLASK ====================
+
+app = Flask(__name__)
+app.secret_key = 'hackathon_secret_key_2025'
+
+# ==================== ПУТИ И ПАПКИ ====================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'db', 'university.db')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'doc', 'ppt'}
+
+# Создаём папки если их нет
+os.makedirs(os.path.join(BASE_DIR, 'db'), exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# ==================== ИНИЦИАЛИЗАЦИЯ БД ====================
+# ВАЖНО: ДО ВСЕХ МАРШРУТОВ!
+
 from data import db_session
 from data.users import User
 from data.schedule import Schedule
 from data.notes import Note
 from data.materials import Material
-from flask import send_file, abort
 
-app = Flask(__name__)
-app.secret_key = 'hackathon_secret_key_2025'
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'doc', 'ppt'}
-UPLOAD_FOLDER = 'static/materials'
+db_session.global_init(DB_PATH)
+
+print(f"✅ База данных инициализирована: {DB_PATH}")
+print(f"✅ Папка загрузок: {UPLOAD_FOLDER}")
+
+# ==================== ФУНКЦИИ ====================
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def get_schedule_from_db(group_name):
     s = db_session.create_session()
@@ -66,7 +87,7 @@ def login_required_custom(f):
 def index():
     if 'user_id' in session:
         if session.get('role') == 'student':
-            return redirect(url_for('schedule'))
+            return redirect(url_for('student_dashboard'))
         else:
             return redirect(url_for('teacher_dashboard'))
     return redirect(url_for('login'))
@@ -86,7 +107,7 @@ def login():
             if user.is_student():
                 session['group'] = user.group_name
                 s.close()
-                return redirect(url_for('schedule'))
+                return redirect(url_for('student_dashboard'))
             else:
                 s.close()
                 return redirect(url_for('teacher_dashboard'))
@@ -119,7 +140,7 @@ def register():
             session['group'] = new_user.group_name
         s.close()
         if role == 'student':
-            return redirect(url_for('schedule'))
+            return redirect(url_for('student_dashboard'))
         else:
             return redirect(url_for('teacher_dashboard'))
     return render_template('register.html', groups=get_all_groups())
@@ -298,9 +319,14 @@ def teacher_schedule():
 @app.route('/teacher/dashboard')
 @login_required_custom
 def teacher_dashboard():
-    if session.get('role') != 'teacher':
-        return redirect(url_for('schedule'))
+
     return render_template('teacher_dashboard.html')
+
+@app.route('/student/dashboard')
+@login_required_custom
+def student_dashboard():
+
+    return render_template('student_dashboard.html')
 
 
 @app.route('/teacher/materials')
@@ -331,16 +357,21 @@ def upload_material():
             return redirect(url_for('teacher_materials') + '?error=Файл не выбран')
         if not allowed_file(file.filename):
             return redirect(url_for('teacher_materials') + '?error=Недопустимый формат файла')
+
         title = request.form.get('title')
-        group_name = request.form.get('group_name')
+        group_names_str = request.form.get('group_names')
+        group_names = group_names_str.split(',') if group_names_str else []
         subject = request.form.get('subject')
         file_type = request.form.get('file_type')
         description = request.form.get('description', '')
         teacher_name = session.get('username')
-        if not all([title, group_name, subject, file_type]):
+
+        if not all([title, group_names, subject, file_type]):
             return redirect(url_for('teacher_materials') + '?error=Заполните все обязательные поля')
+
+        # Сохраняем файл один раз
         original_filename = file.filename
-        safe_chars = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.()"
+        safe_chars = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
         filename = ""
         for char in original_filename:
             if char in safe_chars:
@@ -365,12 +396,27 @@ def upload_material():
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             counter += 1
         file.save(file_path)
+
+        # Создаем запись в БД для каждой выбранной группы
         s = db_session.create_session()
-        material = Material(group_name=group_name, subject=subject, title=title, description=description, file_path=file_path, file_type=file_type, teacher_name=teacher_name, upload_date=datetime.now(), uploaded_by_role='teacher')
-        s.add(material)
+        for group_name in group_names:
+            material = Material(
+                group_name=group_name.strip(),
+                subject=subject,
+                title=title,
+                description=description,
+                file_path=file_path,
+                file_type=file_type,
+                teacher_name=teacher_name,
+                upload_date=datetime.now(),
+                uploaded_by_role='teacher'
+            )
+            s.add(material)
         s.commit()
         s.close()
-        return redirect(url_for('teacher_materials') + '?success=Материал успешно загружен!')
+
+        groups_count = len(group_names)
+        return redirect(url_for('teacher_materials') + f'?success=Материал успешно загружен для {groups_count} групп(ы)!')
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -495,14 +541,20 @@ def download_material(material_id):
         if session.get('role') == 'student':
             if material.group_name != session.get('group'):
                 abort(403)
-        target_filename = os.path.basename(material.file_path)
-        materials_dir = os.path.join('static', 'materials')
-        target_normalized = unicodedata.normalize('NFC', target_filename)
-        for filename in os.listdir(materials_dir):
-            filename_normalized = unicodedata.normalize('NFC', filename)
-            if filename_normalized == target_normalized:
-                full_path = os.path.join(materials_dir, filename)
-                return send_file(full_path, as_attachment=True, download_name=filename)
+
+        # Проверяем существует ли файл
+        if not os.path.exists(material.file_path):
+            print(f"Файл не найден: {material.file_path}")
+            abort(404)
+
+        # Получаем имя файла для скачивания
+        download_name = os.path.basename(material.file_path)
+
+        return send_file(material.file_path, as_attachment=True, download_name=download_name)
+    except Exception as e:
+        print(f"Ошибка при скачивании: {str(e)}")
+        import traceback
+        traceback.print_exc()
         abort(404)
     finally:
         s.close()
@@ -514,6 +566,4 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 if __name__ == '__main__':
-    db_session.global_init('db/university.db')
-    print("🚀 Запуск приложения...")
-    app.run(debug=True, use_reloader=False)
+    app.run()

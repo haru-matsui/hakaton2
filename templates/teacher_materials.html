@@ -7,30 +7,30 @@
         margin-bottom: 30px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     }
-    
+
     .upload-section h3 {
         color: var(--primary-color);
         margin-bottom: 20px;
     }
-    
+
     .form-group {
         margin-bottom: 20px;
     }
-    
+
     .form-group label {
         font-weight: 600;
         color: #2a1468;
         margin-bottom: 8px;
         display: block;
     }
-    
+
     .file-upload-wrapper {
         position: relative;
         overflow: hidden;
         display: inline-block;
         width: auto;
     }
-    
+
     .file-upload-input {
         font-size: 100px;
         position: absolute;
@@ -41,7 +41,7 @@
         width: 100%;
         height: 100%;
     }
-    
+
     .file-upload-button {
         display: inline-block;
         padding: 12px 24px;
@@ -51,13 +51,13 @@
         cursor: default;
         font-weight: 600;
     }
-    
+
     .file-name {
         margin-left: 15px;
         color: #2a1468;
         font-style: italic;
     }
-    
+
     .btn-upload {
         background: var(--primary-color);
         color: white;
@@ -67,7 +67,7 @@
         font-weight: 600;
         font-size: 1.1rem;
     }
-    
+
     .btn-upload:hover {
         background: var(--primary-color);
         color: white;
@@ -77,14 +77,14 @@
         font-weight: 600;
         font-size: 1.1rem;
     }
-    
+
     .materials-list {
         background: white;
         border-radius: 15px;
         padding: 30px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     }
-    
+
     .material-item {
         padding: 15px;
         border-bottom: 1px solid #e8e8e8;
@@ -92,21 +92,21 @@
         justify-content: space-between;
         align-items: center;
     }
-    
+
     .material-item:last-child {
         border-bottom: none;
     }
-    
+
     .material-info h5 {
         margin: 0 0 5px 0;
         color: #2a1468;
     }
-    
+
     .material-meta {
         font-size: 0.9rem;
         color: #2a1468;
     }
-    
+
     .btn-delete {
         background: var(--danger-color);
         color: white;
@@ -115,7 +115,7 @@
         border-radius: 8px;
         font-weight: 600;
     }
-    
+
     .btn-delete:hover {
         background: var(--danger-color);
         color: white;
@@ -124,23 +124,76 @@
         border-radius: 8px;
         font-weight: 600;
     }
-    
+
     .alert {
         padding: 15px;
         border-radius: 10px;
         margin-bottom: 20px;
     }
-    
+
     .alert-success {
         background: #c1f26b;
         color: #2a1468;
         border: 1px solid var(--success-color);
     }
-    
+
     .alert-danger {
         background: #ffa039;
         color: #2a1468;
         border: 1px solid var(--danger-color);
+    }
+
+    .groups-dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        margin-top: 2px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .groups-dropdown-list.show {
+        display: block;
+    }
+
+    .group-option-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .group-option-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .selected-group-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+    }
+
+    .selected-group-badge .remove-badge {
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1rem;
+        margin-left: 2px;
+    }
+
+    .selected-group-badge .remove-badge:hover {
+        color: #ffd700;
     }
 </style>
 {% endblock %} {% block content %}
@@ -174,13 +227,22 @@
 
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Группа *</label>
-                    <select class="form-select" name="group_name" required>
-                    <option value="">Выберите группу</option>
-                    {% for group in groups %}
-                    <option value="{{ group }}">{{ group }}</option>
-                    {% endfor %}
-                </select>
+                    <label>Группы *</label>
+                    <div style="position: relative;">
+                        <div class="form-select" id="groupsSelector" style="cursor: pointer; display: flex; flex-wrap: wrap; gap: 5px; min-height: 38px; align-items: center; padding: 8px;">
+                            <span id="groupsPlaceholder" style="color: #6c757d;">Выберите группы</span>
+                        </div>
+                        <div class="groups-dropdown-list" id="groupsDropdownList">
+                            {% for group in groups %}
+                            <div class="group-option-item" data-group="{{ group }}">
+                                <input type="checkbox" id="group_{{ loop.index }}" value="{{ group }}" style="margin-right: 8px;">
+                                <label for="group_{{ loop.index }}" style="margin: 0; cursor: pointer;">{{ group }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <input type="hidden" name="group_names" id="groupNamesInput" required>
+                    <small class="text-muted">Выберите одну или несколько групп</small>
                 </div>
             </div>
         </div>
@@ -262,6 +324,98 @@
 </div>
 
 <script>
+    function updateFileName(input) {
+        const fileName = input.files[0] ? input.files[0].name : 'Файл не выбран';
+        document.getElementById('fileName').textContent = fileName;
+    }
+
+    // Управление выбором групп
+    let selectedGroups = [];
+    const groupsSelector = document.getElementById('groupsSelector');
+    const groupsDropdownList = document.getElementById('groupsDropdownList');
+    const groupsPlaceholder = document.getElementById('groupsPlaceholder');
+    const groupNamesInput = document.getElementById('groupNamesInput');
+
+    // Открытие/закрытие списка при клике на селектор
+    groupsSelector.addEventListener('click', function(e) {
+        // Если клик не по крестику удаления
+        if (!e.target.classList.contains('remove-badge')) {
+            groupsDropdownList.classList.toggle('show');
+        }
+    });
+
+    // Закрытие при клике вне элемента
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#groupsSelector') && !e.target.closest('.groups-dropdown-list')) {
+            groupsDropdownList.classList.remove('show');
+        }
+    });
+
+    // Обработка выбора/отмены групп
+    document.querySelectorAll('.group-option-item input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const groupName = this.value;
+
+            if (this.checked) {
+                if (!selectedGroups.includes(groupName)) {
+                    selectedGroups.push(groupName);
+                }
+            } else {
+                selectedGroups = selectedGroups.filter(g => g !== groupName);
+            }
+
+            updateGroupsDisplay();
+        });
+    });
+
+    // Обновление отображения выбранных групп
+    function updateGroupsDisplay() {
+        // Очищаем селектор
+        groupsSelector.innerHTML = '';
+
+        if (selectedGroups.length === 0) {
+            groupsSelector.innerHTML = '<span id="groupsPlaceholder" style="color: #6c757d;">Выберите группы</span>';
+            groupNamesInput.value = '';
+        } else {
+            selectedGroups.forEach(group => {
+                const badge = document.createElement('span');
+                badge.className = 'selected-group-badge';
+                badge.innerHTML = `${group} <span class="remove-badge" data-group="${group}">×</span>`;
+                groupsSelector.appendChild(badge);
+            });
+
+            // Обновляем скрытое поле
+            groupNamesInput.value = selectedGroups.join(',');
+        }
+    }
+
+    // Удаление группы по клику на крестик
+    groupsSelector.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-badge')) {
+            e.stopPropagation();
+            const groupName = e.target.dataset.group;
+            selectedGroups = selectedGroups.filter(g => g !== groupName);
+
+            // Снимаем галочку с чекбокса
+            document.querySelectorAll('.group-option-item input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.value === groupName) {
+                    checkbox.checked = false;
+                }
+            });
+
+            updateGroupsDisplay();
+        }
+    });
+
+    // Валидация формы
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (selectedGroups.length === 0) {
+            e.preventDefault();
+            alert('Пожалуйста, выберите хотя бы одну группу');
+            return false;
+        }
+    });
+
     function updateFileName(input) {
         const fileName = input.files[0] ? input.files[0].name : 'Файл не выбран';
         document.getElementById('fileName').textContent = fileName;
